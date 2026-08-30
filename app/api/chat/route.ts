@@ -1,6 +1,6 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
-import { claudeModel, systemPrompt } from "@/lib/ai/config";
+import { geminiModel, systemPrompt } from "@/lib/ai/config";
 
 type ChatRequest = {
   messages?: unknown;
@@ -45,12 +45,18 @@ export async function POST(request: Request) {
     const parsedBody: unknown = await request.json();
 
     if (!isChatRequest(parsedBody)) {
-      return Response.json({ error: "Request body must be a JSON object." }, { status: 400 });
+      return Response.json(
+        { error: "Request body must be a JSON object." },
+        { status: 400 },
+      );
     }
 
     body = parsedBody;
   } catch {
-    return Response.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    return Response.json(
+      { error: "Request body must be valid JSON." },
+      { status: 400 },
+    );
   }
 
   if (!isChatMessages(body.messages)) {
@@ -60,27 +66,27 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return Response.json(
-      { error: "The Anthropic API key is not configured." },
+      { error: "The Gemini API key is not configured." },
       { status: 500 },
     );
   }
 
   try {
     const result = streamText({
-      model: claudeModel,
+      model: geminiModel,
       system: systemPrompt,
       messages: await convertToModelMessages(body.messages),
       onError: ({ error }) => {
-        console.error("Claude streaming request failed", error);
+        console.error("Gemini streaming request failed", error);
       },
     });
 
     return result.toUIMessageStreamResponse();
   } catch {
     return Response.json(
-      { error: "The Claude request could not be completed." },
+      { error: "The Gemini request could not be completed." },
       { status: 500 },
     );
   }
