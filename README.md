@@ -1,6 +1,5 @@
 # Web Development Learning Assistant
 
-# Web Development Learning Assistant
 
 **Live Application:** https://week-4-task-2-ai-chat.vercel.app/
 
@@ -361,11 +360,9 @@ The application is deployed as a production Next.js application.
 
 ### Production URL
 
-Replace the following placeholder with the actual deployed URL:
 
-```text
-YOUR_PRODUCTION_URL
-```
+Live Application: https://week-4-task-2-ai-chat.vercel.app/
+
 
 ### Deployment Requirements
 
