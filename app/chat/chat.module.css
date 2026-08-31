@@ -63,11 +63,13 @@
 
 .messages {
   display: flex;
-  flex: 1;
+  width: 100%;
+  flex: 0 0 auto;
   min-height: 0;
   flex-direction: column;
   gap: 14px;
   padding: 8px clamp(20px, 5vw, 72px);
+  box-sizing: border-box;
 }
 
 .emptyState {
@@ -163,7 +165,11 @@
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+  box-sizing: border-box;
 }
 
 .suggestionArrow {
@@ -199,6 +205,7 @@
   padding: 15px 17px;
   border-radius: 14px;
   box-shadow: 0 4px 14px rgb(23 33 43 / 4%);
+  box-sizing: border-box;
 }
 
 .userMessage {
@@ -213,6 +220,7 @@
   align-self: flex-start;
   border: 1px solid #e3e9e6;
   border-bottom-left-radius: 4px;
+  color: #17212b;
   background: #fff;
 }
 
@@ -227,10 +235,24 @@
 }
 
 .messageContent {
+  max-width: 100%;
+  min-width: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: 15px;
   line-height: 1.6;
+}
+
+.messageContent pre {
+  max-width: 100%;
+  margin: 1em 0;
+  overflow-x: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.messageContent code {
+  max-width: 100%;
 }
 
 .assistantMessage .messageContent:empty::after {
@@ -253,24 +275,30 @@
   background: #fff7f5;
   font-size: 13px;
   line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .form {
   display: grid;
   width: min(100% - 40px, 760px);
+  flex: 0 0 auto;
   flex-shrink: 0;
   gap: 10px;
   margin: 0 auto;
   padding: 4px 0 28px;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
 }
 
 .inputLabel {
-  color: #47565d;
+  color: #30413f;
   font-size: 13px;
   font-weight: 650;
 }
 
 .input {
+  display: block;
   width: 100%;
   min-height: 46px;
   max-height: 192px;
@@ -285,7 +313,10 @@
   font: inherit;
   font-size: 15px;
   line-height: 1.5;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+  box-sizing: border-box;
 }
 
 .input::placeholder {
@@ -310,7 +341,11 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+  box-sizing: border-box;
 }
 
 .submit:hover:not(:disabled) {
@@ -321,7 +356,10 @@
 
 .submit:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 1;
+  color: #657078;
+  background: #e8efec;
+  border-color: #d5dfdb;
 }
 
 @media (max-width: 600px) {

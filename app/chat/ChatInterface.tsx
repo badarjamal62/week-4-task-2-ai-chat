@@ -2,7 +2,13 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -17,16 +23,16 @@ const suggestedQuestions = [
 ];
 
 const maxInputHeight = 192;
+const scrollBottomThreshold = 80;
 
 export default function ChatInterface() {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // True when the user wants the page to follow the newest response.
+  // Auto-scroll remains enabled only while the user is at/near the bottom.
   const shouldAutoScrollRef = useRef(true);
 
-  // Prevent our own programmatic scrolling from being interpreted
-  // as the user manually scrolling.
+  // Prevent our own programmatic scroll from being treated as user scrolling.
   const programmaticScrollRef = useRef(false);
 
   const { messages, sendMessage, status, error } = useChat({
@@ -37,10 +43,13 @@ export default function ChatInterface() {
   const canSubmit = input.trim().length > 0 && !isSubmitting;
 
   /*
-   * Detect manual page scrolling.
+   * Track the user's actual page position.
    *
-   * If the user moves away from the bottom, auto-scroll is disabled.
-   * When the user manually returns near the bottom, auto-scroll resumes.
+   * If the user scrolls upward, the distance from the bottom becomes
+   * greater than the threshold and auto-scroll is disabled.
+   *
+   * When the user manually returns near the bottom, auto-scroll is
+   * enabled again.
    */
   useEffect(() => {
     const handleScroll = () => {
@@ -55,9 +64,8 @@ export default function ChatInterface() {
       const distanceFromBottom =
         documentHeight - (scrollPosition + viewportHeight);
 
-      const isNearBottom = distanceFromBottom <= 80;
-
-      shouldAutoScrollRef.current = isNearBottom;
+      shouldAutoScrollRef.current =
+        distanceFromBottom <= scrollBottomThreshold;
     };
 
     window.addEventListener("scroll", handleScroll, {
@@ -70,19 +78,26 @@ export default function ChatInterface() {
   }, []);
 
   /*
-   * Follow the latest response only when auto-scroll is enabled.
+   * Follow newly generated content only when the user is already
+   * at/near the bottom.
    *
-   * The user's manual scroll position is never overridden once
-   * auto-scroll has been disabled.
+   * If the user has manually scrolled upward, this effect exits
+   * immediately and never moves the viewport.
    */
   useEffect(() => {
     if (!shouldAutoScrollRef.current) {
       return;
     }
 
+    const target = messagesEndRef.current;
+
+    if (!target) {
+      return;
+    }
+
     programmaticScrollRef.current = true;
 
-    messagesEndRef.current?.scrollIntoView({
+    target.scrollIntoView({
       behavior: "auto",
       block: "end",
     });
@@ -99,7 +114,7 @@ export default function ChatInterface() {
       return;
     }
 
-    // A new question should start at the latest conversation position.
+    // Starting a new question should follow the new response.
     shouldAutoScrollRef.current = true;
 
     setInput("");
@@ -111,7 +126,7 @@ export default function ChatInterface() {
     await sendQuestion(input);
   }
 
-  function handleInputChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+  function handleInputChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const textarea = event.currentTarget;
 
     textarea.style.height = "auto";
@@ -122,13 +137,16 @@ export default function ChatInterface() {
 
     textarea.style.height = `${Math.min(contentHeight, maxInputHeight)}px`;
     textarea.style.overflowY = isOverflowing ? "auto" : "hidden";
+
     setInput(textarea.value);
   }
 
   return (
     <section className={styles.chat} aria-labelledby="chat-title">
       <header className={styles.header}>
-        <p className={styles.eyebrow}>Web Development Learning Assistant</p>
+        <p className={styles.eyebrow}>
+          Web Development Learning Assistant
+        </p>
 
         <h1 id="chat-title">Web Development Assistant</h1>
 
@@ -164,43 +182,44 @@ export default function ChatInterface() {
             />
           </div>
         ) : (
-          messages.map((message) => (
-            <article
-              className={`${styles.message} ${
-                message.role === "user"
-                  ? styles.userMessage
-                  : styles.assistantMessage
-              }`}
-              key={message.id}
-            >
-              <p className={styles.messageRole}>
-                {message.role === "user" ? "You" : "Gemini"}
-              </p>
+          messages.map((message) => {
+            const text = message.parts
+              .filter((part) => part.type === "text")
+              .map((part) => part.text)
+              .join("");
 
-              <div className={styles.messageContent}>
-                {message.parts
-                  .filter((part) => part.type === "text")
-                  .map((part) => part.text)
-                  .join("") ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      pre: ({ children, ...props }) => (
-                        <pre {...props}>{children}</pre>
-                      ),
-                    }}
-                  >
-                    {message.parts
-                      .filter((part) => part.type === "text")
-                      .map((part) => part.text)
-                      .join("")}
-                  </ReactMarkdown>
-                ) : (
-                  isSubmitting ? "Thinking..." : ""
-                )}
-              </div>
-            </article>
-          ))
+            return (
+              <article
+                className={`${styles.message} ${
+                  message.role === "user"
+                    ? styles.userMessage
+                    : styles.assistantMessage
+                }`}
+                key={message.id}
+              >
+                <p className={styles.messageRole}>
+                  {message.role === "user" ? "You" : "Gemini"}
+                </p>
+
+                <div className={styles.messageContent}>
+                  {text ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        pre: ({ children, ...props }) => (
+                          <pre {...props}>{children}</pre>
+                        ),
+                      }}
+                    >
+                      {text}
+                    </ReactMarkdown>
+                  ) : isSubmitting ? (
+                    "Thinking..."
+                  ) : null}
+                </div>
+              </article>
+            );
+          })
         )}
 
         <div ref={messagesEndRef} aria-hidden="true" />
